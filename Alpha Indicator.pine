@@ -1,0 +1,102 @@
+// © agp8
+//@version=4
+study(title = "MAs + P.SAR", overlay = true, shorttitle="MAs + P.SAR")
+
+//Seccion MAs 
+print_sma200 = input(false, "Dibujar SMA de 200")
+plot ( (print_sma200 ? sma(close, 200) : na), color=color.white, linewidth = 2, title = "SMA 200" )
+
+print_sma50 = input(false, "Dibujar SMA de 50 (cruce dorado)")
+plot ( (print_sma50 ? sma(close, 50) : na), color=color.white, linewidth = 2, title = "SMA 50" )
+
+
+//Seccion EMAs
+print_ema21 = input(false, "Dibujar EMA 21")
+plot ( (print_ema21 ? ema(close, 21) : na), color=color.blue, title = "SMA 200" )
+
+print_ema50 = input(false, "Dibujar EMA 50")
+plot ( (print_ema50 ? ema(close, 50) : na), color=color.blue, title = "SMA 100" )
+
+
+//Seccion Parabolic SAR
+SAR_largeStop = input(false, "Parabolic SAR LargeStop Setup")
+plot ( (SAR_largeStop ? sar(0.02, 0, 0.2) : na ), style=plot.style_circles, color=color.orange, linewidth = 1, title = "Parabolic SAR LargeStop Setup" )
+
+SAR_smallStop = input(false, "Parabolic SAR SmallStop Setup")
+plot ( (SAR_smallStop ? sar(0.03, 0, 0.2) : na ), style=plot.style_circles, color=color.orange, linewidth = 1, title = "Parabolic SAR SmallStop Setup" )
+
+
+//Seccion Sistema Triple Medias
+emaRapida = input( defval = 4, title = "triple Media rapida", minval= 2)
+emaMedia = input( defval = 9, title = "triple Media media", minval= 2)
+emaLenta = input( defval = 18, title = "triple Media lenta", minval= 2)
+
+print_triple_medias = input(false, "Dibujar Sistema Triple Medias")
+plot ( (print_triple_medias ? ema(close, emaRapida) : na), color=color.green, title = "triple Media rapida" )
+plot ( (print_triple_medias ? ema(close, emaMedia)  : na), color=color.yellow, title = "triple Media media" )
+plot ( (print_triple_medias ? ema(close, emaLenta)  : na), color=color.red, title = "triple Media lenta" )
+
+tripleMediasAlcista = if (ema(close, emaMedia) > ema(close, emaLenta))
+    true
+else 
+    false
+
+stop_tripleMediasAlcista = if (ema(close, emaRapida) < ema(close, emaMedia))
+    true
+else
+    false
+
+tripleMediasBajista = if (ema(close, emaMedia) < ema(close, emaLenta))
+    true
+else
+    false
+
+stop_tripleMediasBajista = if (ema(close, emaRapida) > ema(close, emaMedia))
+    true
+else 
+    false
+
+
+//Seccion Sistema Nexxson
+ema9 = input( defval = 9, title = "Nexxson EMA de 9", minval= 2)
+ema20 = input( defval = 20, title = "Nexxson EMA de 20", minval= 2)
+ema50 = input( defval = 50, title = "Nexxson EMA de 50", minval= 2)
+
+print_nexxson = input(false, "Dibujar Sistema Nexxson")
+plot ( (print_nexxson ? ema(close, ema9) : na), color=color.green, linewidth = 2, title = "Nexxson EMA de 9" )
+plot ( (print_nexxson ? ema(close, ema20): na), color=color.yellow, linewidth = 2, title = "Nexxson EMA de 20" )
+plot ( (print_nexxson ? ema(close, ema50): na), color=color.red, linewidth = 2, title = "Nexxson EMA de 50" )
+
+
+//Seccion Tabla
+var table tabla_datos = table.new(position.top_right, 4,3, border_width =2 ) //columnas*filas
+cant_velas_1 = input(inline="cant velas", defval = 7, title = "velas")
+cant_velas_2 = input(inline="cant velas", defval = 30, title = "velas")
+cant_velas_3 = input(inline="cant velas", defval = 60, title = "velas")
+
+calcular_porcentaje(maximo, minimo) =>
+    porcentaje = ((maximo/minimo)-1)*100
+    tostring(porcentaje, "0.00") + "%"
+
+resultado1 = calcular_porcentaje(highest(cant_velas_1), lowest(cant_velas_1))
+resultado2 = calcular_porcentaje(highest(cant_velas_2), lowest(cant_velas_2))
+resultado3 = calcular_porcentaje(highest(cant_velas_3), lowest(cant_velas_3))
+
+alcista = tripleMediasAlcista and not(stop_tripleMediasAlcista)
+bajista = tripleMediasBajista and not(stop_tripleMediasBajista)
+simbolo_segun_estado = alcista ? "↑" : (bajista ? "↓" : "−")
+
+if barstate.islast
+    //primera fila de encabezados
+    table.cell(tabla_datos, 0, 0, "Cant Velas", bgcolor = color.new(color.blue, 70), text_color = color.black)
+    table.cell(tabla_datos, 1, 0, tostring(cant_velas_1), bgcolor = color.new(color.blue, 70), text_color = color.black)
+    table.cell(tabla_datos, 2, 0, tostring(cant_velas_2), bgcolor = color.new(color.blue, 70), text_color = color.black)
+    table.cell(tabla_datos, 3, 0, tostring(cant_velas_3), bgcolor = color.new(color.blue, 70), text_color = color.black)
+    // segunda fila con valores (muestra los rangos de porcentaje en el cual el precio oscilo durante la cantidad de velas dadas)
+    table.cell(tabla_datos, 0, 1, "Oscilacion", bgcolor = color.new(color.blue, 70), text_color = color.black)
+    table.cell(tabla_datos, 1, 1, resultado1, bgcolor = color.new(color.blue, 70), text_color = color.black)
+    table.cell(tabla_datos, 2, 1, resultado2, bgcolor = color.new(color.blue, 70), text_color = color.black)
+    table.cell(tabla_datos, 3, 1, resultado3, bgcolor = color.new(color.blue, 70), text_color = color.black)
+    //tercer fila (muestra si el triple medias da compra/venta/neutro)
+    table.cell(tabla_datos, 0, 2, "triple medias", bgcolor = color.new(color.blue, 70), text_color = color.black)
+    table.cell(tabla_datos, 1, 2, simbolo_segun_estado , bgcolor = color.new(color.blue, 70), text_color = color.black)
